@@ -15,7 +15,9 @@
 'use strict'
 
 
-module.exports = function (mu) {
+var mu = require('mu')()
+
+module.exports = function (cb) {
 
   mu.define({role: 's2', cmd: 'one'}, function (args, cb) {
     console.log('service 2 one')
@@ -27,6 +29,9 @@ module.exports = function (mu) {
     cb(null, {my: 'response'})
   })
 
-  return mu
+  // simulate resource initialization
+  setTimeout(function () {
+    cb(mu)
+  }, 1000)
 }
 

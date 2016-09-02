@@ -25,7 +25,7 @@ var Mu = require('mu')
 
 // define service
 
-var mus = Mu()
+var mus = Mu().use('tcp')
 
 mus.define({role: 'test', cmd: 'one'}, function (args, cb) {
   mus.log.info('in one')
@@ -37,14 +37,14 @@ mus.define({role: 'test', cmd: 'two'}, function (args, cb) {
   cb(null, {my: 'response'})
 })
 
-mus.define('*', mus.transports.tcp({source: {port: 3001, host: '127.0.0.1'}}))
+mus.inbound('*', mus.transports.tcp({source: {port: 3001, host: '127.0.0.1'}}))
 
 
 // consume service
 
-var muc = Mu()
+var muc = Mu().use('tcp')
 
-muc.define('*', muc.transports.tcp({target: {port: 3001, host: '127.0.0.1'}}))
+muc.outbound('*', muc.transports.tcp({target: {port: 3001, host: '127.0.0.1'}}))
 
 muc.dispatch({role: 'test', cmd: 'one', fish: 'cheese'}, function (err, result) {
   muc.log.debug(err)

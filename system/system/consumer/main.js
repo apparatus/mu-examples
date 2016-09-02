@@ -14,26 +14,13 @@
 
 'use strict'
 
-/*
- * spin up services and consume them in using tcp transport
- */
-
-var Mu = require('mu')
-
-var s1 = require('./system/service1')(Mu())
-s1.define('*', s1.transports.tcp({source: {port: 3001, host: '127.0.0.1'}}))
-
-var s2 = require('./system/service2')(Mu())
-s2.define('*', s2.transports.tcp({source: {port: 3002, host: '127.0.0.1'}}))
-
-var consumer = require('./system/consumer')(Mu())
-consumer.mu.define({role: 's2'}, consumer.mu.transports.tcp({target: {port: 3002, host: '127.0.0.1'}}))
-consumer.mu.define({role: 's1'}, consumer.mu.transports.tcp({target: {port: 3001, host: '127.0.0.1'}}))
+var consumer = require('./consumer')()
+consumer.mu.use('tcp')
+consumer.mu.outbound({role: 's1'}, consumer.mu.transports.tcp({target: {port: 3001, host: '127.0.0.1'}}))
+consumer.mu.outbound({role: 's2'}, consumer.mu.transports.tcp({target: {port: 3002, host: '127.0.0.1'}}))
 
 consumer.consume(function () {
   console.log('done')
   consumer.mu.tearDown()
-  s1.tearDown()
-  s2.tearDown()
 })
 

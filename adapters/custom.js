@@ -14,10 +14,12 @@
 
 'use strict'
 
+
+
 /*
- * tee adapter example. Create two services and define action handlers,
- * create a consumer instance of mu and consume the action handlers. The
- * tee adapter will send calls to both services.
+ * balance adapter example. Create two services and define action handlers,
+ * create a consumer instance of mu and consume the action handlers using a round robin
+ * balancer across the two service instances over tcp transport
  */
 
 var Mu = require('mu')
@@ -28,8 +30,10 @@ var Mu = require('mu')
 var mu1 = Mu().use('tcp')
 
 mu1.define({role: 'test', cmd: 'one'}, function (args, cb) {
+
   console.log('in one')
   cb()
+
 })
 
 mu1.define({role: 'test', cmd: 'two'}, function (args, cb) {
@@ -40,34 +44,46 @@ mu1.define({role: 'test', cmd: 'two'}, function (args, cb) {
 mu1.inbound('*', mu1.transports.tcp({source: {port: 3001, host: '127.0.0.1'}}))
 
 
-// service 2
+// custom adapter - console logs the packet and forwards
+var myAdapter = function (mu, transports) {
+  var muid = 'bob-123'
 
-var mu2 = Mu().use('tcp')
+  function tf (message, cb) {
+    console.log('MESSAGE: ', message)
+    for (var index = 0; index < transports.length; ++index) {
+      transports[index].tf(message, cb)
+    }
+  }
 
-mu2.define({role: 'test', cmd: 'one'}, function (args, cb) {
-  console.log('in one')
-  cb()
-})
+  function setId (id) {
+    transports.forEach(function (transport) {
+      transport.setId(muid)
+    })
+  }
 
-mu2.define({role: 'test', cmd: 'two'}, function (args, cb) {
-  console.log('SERVICE 2')
-  cb(null, {my: 'response', service: 'two'})
-})
 
-mu2.inbound('*', mu2.transports.tcp({source: {port: 3002, host: '127.0.0.1'}}))
+  setId(muid)
+  return {
+    muid: muid,
+    tf: tf,
+    type: 'transport',
+    setId: function () {}
+  }
+}
+myAdapter.type = 'adapter'
+myAdapter.epithet = 'bob'
 
 
 // consumer
+var mu = Mu().use('tcp').use(myAdapter)
 
-var mu = Mu().use('tcp').use('tee')
-mu.outbound('*', mu.transports.tee([mu.transports.tcp({target: {port: 3001, host: '127.0.0.1'}}),
-                                    mu.transports.tcp({target: {port: 3002, host: '127.0.0.1'}})]))
+mu.outbound({role: 'test'}, mu.transports.bob([mu.transports.tcp({target: {port: 3001, host: '127.0.0.1'}})]))
 
 for (var idx = 0; idx < 10; idx++) {
   console.log('dispatching')
   mu.dispatch({role: 'test', cmd: 'two', fish: 'cheese'}, function (err, result) {
     if (err) { console.log(err) }
-    console.log('BACK')
+    console.log('done')
   })
 }
 

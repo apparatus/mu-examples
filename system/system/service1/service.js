@@ -15,33 +15,23 @@
 'use strict'
 
 
-/*
- * spin up service and consume them in process using function transport
- */
+var mu = require('mu')()
 
-function init (cb) {
-  require('./system/service1/service')(function (s1) {
-    s1.use('func').inbound('*', s1.transports.func())
-    require('./system/service2/service')(function (s2) {
-      s2.use('func').use('func').inbound('*', s2.transports.func())
-      cb(s1, s2)
-    })
+module.exports = function (cb) {
+
+  mu.define({role: 's1', cmd: 'one'}, function (args, cb) {
+    console.log('service 1 one')
+    cb()
   })
+
+  mu.define({role: 's1', cmd: 'two'}, function (args, cb) {
+    console.log('service 1 two')
+    cb(null, {my: 'response'})
+  })
+
+  // simulate resource initialization
+  setTimeout(function () {
+    cb(mu)
+  }, 1000)
 }
-
-
-
-init(function (s1, s2) {
-  var consumer = require('./system/consumer/consumer')()
-  consumer.mu.use('func')
-  consumer.mu.outbound({role: 's1'}, consumer.mu.transports.func({target: s1}))
-  consumer.mu.outbound({role: 's2'}, consumer.mu.transports.func({target: s2}))
-
-  consumer.consume(function () {
-    console.log('done')
-    consumer.mu.tearDown()
-    s1.tearDown()
-    s2.tearDown()
-  })
-})
 
