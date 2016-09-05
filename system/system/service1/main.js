@@ -14,7 +14,9 @@
 
 'use strict'
 
+var tcp = require('mu/drivers/tcp')
+
 require('./service')(function (mu) {
-  mu.use('tcp').inbound('*', mu.transports.tcp({source: {port: 3001, host: '127.0.0.1'}}))
+  mu.inbound('*', tcp.server({port: 3001, host: '127.0.0.1'}))
 })
 

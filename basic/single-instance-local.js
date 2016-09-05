@@ -18,12 +18,11 @@
  * simple use case. Create an instance of mu, define two action handlers and then execute them
  */
 
-
 var mu = require('mu')()
 
 
-// define handlers
 
+// define handlers
 mu.define({role: 'test', cmd: 'one'}, function (args, cb) {
   mu.log.info('in one', args)
   cb()
@@ -35,8 +34,8 @@ mu.define({role: 'test', cmd: 'two'}, function (args, cb) {
 })
 
 
-// execute handlers
 
+// execute handlers
 mu.dispatch({role: 'test', cmd: 'one', fish: 'cheese'}, function (err, result) {
   mu.log.info('in cb')
   mu.log.info(err)

@@ -21,11 +21,13 @@
  */
 
 var Mu = require('mu')
+var tcp = require('mu/drivers/tcp')
+var tee = require('mu/adapters/tee')
+
 
 
 // service 1
-
-var mu1 = Mu().use('tcp')
+var mu1 = Mu()
 
 mu1.define({role: 'test', cmd: 'one'}, function (args, cb) {
   console.log('in one')
@@ -37,12 +39,12 @@ mu1.define({role: 'test', cmd: 'two'}, function (args, cb) {
   cb(null, {my: 'response'})
 })
 
-mu1.inbound('*', mu1.transports.tcp({source: {port: 3001, host: '127.0.0.1'}}))
+mu1.inbound('*', tcp.server({port: 3001, host: '127.0.0.1'}))
+
 
 
 // service 2
-
-var mu2 = Mu().use('tcp')
+var mu2 = Mu()
 
 mu2.define({role: 'test', cmd: 'one'}, function (args, cb) {
   console.log('in one')
@@ -51,23 +53,24 @@ mu2.define({role: 'test', cmd: 'one'}, function (args, cb) {
 
 mu2.define({role: 'test', cmd: 'two'}, function (args, cb) {
   console.log('SERVICE 2')
-  cb(null, {my: 'response', service: 'two'})
+  cb(null, {my: 'response'})
 })
 
-mu2.inbound('*', mu2.transports.tcp({source: {port: 3002, host: '127.0.0.1'}}))
+mu2.inbound('*', tcp.server({port: 3002, host: '127.0.0.1'}))
+
 
 
 // consumer
+var mu = Mu()
 
-var mu = Mu().use('tcp').use('tee')
-mu.outbound('*', mu.transports.tee([mu.transports.tcp({target: {port: 3001, host: '127.0.0.1'}}),
-                                    mu.transports.tcp({target: {port: 3002, host: '127.0.0.1'}})]))
+mu.outbound({role: 'test'}, tee([tcp.client({port: 3001, host: '127.0.0.1'}),
+                                 tcp.client({port: 3002, host: '127.0.0.1'})]))
 
 for (var idx = 0; idx < 10; idx++) {
   console.log('dispatching')
   mu.dispatch({role: 'test', cmd: 'two', fish: 'cheese'}, function (err, result) {
     if (err) { console.log(err) }
-    console.log('BACK')
+    console.log('done')
   })
 }
 

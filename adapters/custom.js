@@ -14,8 +14,6 @@
 
 'use strict'
 
-
-
 /*
  * balance adapter example. Create two services and define action handlers,
  * create a consumer instance of mu and consume the action handlers using a round robin
@@ -23,11 +21,12 @@
  */
 
 var Mu = require('mu')
+var tcp = require('mu/drivers/tcp')
+
 
 
 // service 1
-
-var mu1 = Mu().use('tcp')
+var mu1 = Mu()
 
 mu1.define({role: 'test', cmd: 'one'}, function (args, cb) {
 
@@ -41,11 +40,11 @@ mu1.define({role: 'test', cmd: 'two'}, function (args, cb) {
   cb(null, {my: 'response'})
 })
 
-mu1.inbound('*', mu1.transports.tcp({source: {port: 3001, host: '127.0.0.1'}}))
+mu1.inbound('*', tcp.server({port: 3001, host: '127.0.0.1'}))
 
 
 // custom adapter - console logs the packet and forwards
-var myAdapter = function (mu, transports) {
+var customAdapter = function (transports) {
   var muid = 'bob-123'
 
   function tf (message, cb) {
@@ -53,6 +52,12 @@ var myAdapter = function (mu, transports) {
     for (var index = 0; index < transports.length; ++index) {
       transports[index].tf(message, cb)
     }
+  }
+
+  function setMu (muInstance) {
+    transports.forEach(function (transport) {
+      transport.setMu(muInstance)
+    })
   }
 
   function setId (id) {
@@ -67,17 +72,16 @@ var myAdapter = function (mu, transports) {
     muid: muid,
     tf: tf,
     type: 'transport',
-    setId: function () {}
+    setId: setId,
+    setMu: setMu
   }
 }
-myAdapter.type = 'adapter'
-myAdapter.epithet = 'bob'
+
 
 
 // consumer
-var mu = Mu().use('tcp').use(myAdapter)
-
-mu.outbound({role: 'test'}, mu.transports.bob([mu.transports.tcp({target: {port: 3001, host: '127.0.0.1'}})]))
+var mu = Mu()
+mu.outbound({role: 'test'}, customAdapter([tcp.client({port: 3001, host: '127.0.0.1'})]))
 
 for (var idx = 0; idx < 10; idx++) {
   console.log('dispatching')

@@ -14,18 +14,18 @@
 
 'use strict'
 
-
 /*
  * tcp microservice example. Create a service and define action handlers,
  * create a consumer instance of mu and consume the action handlers using a local function transport
  */
 
 var Mu = require('mu')
+var tcp = require('mu/drivers/tcp')
+
 
 
 // define service
-
-var mus = Mu().use('tcp')
+var mus = Mu()
 
 mus.define({role: 'test', cmd: 'one'}, function (args, cb) {
   mus.log.info('in one')
@@ -37,14 +37,14 @@ mus.define({role: 'test', cmd: 'two'}, function (args, cb) {
   cb(null, {my: 'response'})
 })
 
-mus.inbound('*', mus.transports.tcp({source: {port: 3001, host: '127.0.0.1'}}))
+mus.inbound('*', tcp.server({port: 3001, host: '127.0.0.1'}))
+
 
 
 // consume service
+var muc = Mu()
 
-var muc = Mu().use('tcp')
-
-muc.outbound('*', muc.transports.tcp({target: {port: 3001, host: '127.0.0.1'}}))
+muc.outbound('*', tcp.client({port: 3001, host: '127.0.0.1'}))
 
 muc.dispatch({role: 'test', cmd: 'one', fish: 'cheese'}, function (err, result) {
   muc.log.debug(err)

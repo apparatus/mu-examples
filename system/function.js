@@ -14,6 +14,8 @@
 
 'use strict'
 
+var func = require('mu/drivers/func')
+
 
 /*
  * spin up service and consume them in process using function transport
@@ -21,9 +23,9 @@
 
 function init (cb) {
   require('./system/service1/service')(function (s1) {
-    s1.use('func').inbound('*', s1.transports.func())
+    s1.inbound('*', func())
     require('./system/service2/service')(function (s2) {
-      s2.use('func').use('func').inbound('*', s2.transports.func())
+      s2.inbound('*', func())
       cb(s1, s2)
     })
   })
@@ -33,9 +35,8 @@ function init (cb) {
 
 init(function (s1, s2) {
   var consumer = require('./system/consumer/consumer')()
-  consumer.mu.use('func')
-  consumer.mu.outbound({role: 's1'}, consumer.mu.transports.func({target: s1}))
-  consumer.mu.outbound({role: 's2'}, consumer.mu.transports.func({target: s2}))
+  consumer.mu.outbound({role: 's1'}, func({target: s1}))
+  consumer.mu.outbound({role: 's2'}, func({target: s2}))
 
   consumer.consume(function () {
     console.log('done')
