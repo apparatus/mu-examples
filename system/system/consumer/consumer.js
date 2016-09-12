@@ -23,10 +23,17 @@ module.exports = function () {
     mu.dispatch({role: 's2', cmd: 'one', fish: 'cheese'}, function (err, result) {
       if (err) { console.log(err) }
       console.log('in cb 1')
+      console.log(result)
       mu.dispatch({role: 's1', cmd: 'two', fish: 'cheese'}, function (err, result) {
         if (err) { console.log(err) }
         console.log('in cb 2')
-        cb()
+        console.log(result)
+        mu.dispatch({role: 's3', cmd: 'one'}, function (err, result) {
+          if (err) { console.log(err) }
+          console.log('in cb 3')
+          console.log(result)
+          cb()
+        })
       })
     })
   }

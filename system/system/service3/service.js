@@ -5,7 +5,7 @@
  * DISCLAIMED.  IN NO EVENT SHALL THE AUTHOR BE LIABLE FOR ANY DIRECT,
  * INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
  * (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR
- * SERVICES LOSS OF USE, DATA, OR PROFITS OR BUSINESS INTERRUPTION)
+ * SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION)
  * HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT,
  * STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING
  * IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
@@ -15,39 +15,16 @@
 'use strict'
 
 
-/*
- * simple use case with custom logger
- */
-
-var pino = require('pino')
-
 var mu = require('mu')()
 
+module.exports = function (initCb) {
 
-// define handlers
+  mu.define({role: 's3', cmd: 'one'}, function (args, cb) {
+    mu.dispatch({role: 's1', cmd: 'two'}, function (err, result) {
+      cb(err, result)
+    })
+  })
 
-mu.define({role: 'test', cmd: 'one'}, function (args, cb) {
-  mu.log.info('in one', args)
-  cb()
-})
-
-mu.define({role: 'test', cmd: 'two'}, function (args, cb) {
-  mu.log.info('in two', args)
-  cb(null, {my: 'response'})
-})
-
-
-// execute handlers
-
-mu.dispatch({role: 'test', cmd: 'one', fish: 'cheese'}, function (err, result) {
-  mu.log.info('in cb')
-  mu.log.info(err)
-  mu.log.info(result)
-})
-
-mu.dispatch({role: 'test', cmd: 'two', fish: 'cheese'}, function (err, result) {
-  mu.log.info('in cb')
-  mu.log.info(err)
-  mu.log.info(result)
-})
+  initCb(mu)
+}
 

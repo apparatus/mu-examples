@@ -18,6 +18,7 @@ var tcp = require('mu/drivers/tcp')
 var consumer = require('./consumer')()
 consumer.mu.outbound({role: 's1'}, tcp.client({port: 3001, host: '127.0.0.1'}))
 consumer.mu.outbound({role: 's2'}, tcp.client({port: 3002, host: '127.0.0.1'}))
+consumer.mu.outbound({role: 's3'}, tcp.client({port: 3003, host: '127.0.0.1'}))
 
 consumer.consume(function () {
   console.log('done')

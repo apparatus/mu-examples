@@ -26,23 +26,29 @@ function init (cb) {
     s1.inbound('*', func())
     require('./system/service2/service')(function (s2) {
       s2.inbound('*', func())
-      cb(s1, s2)
+      require('./system/service3/service')(function (s3) {
+        s3.inbound('*', func())
+        s3.outbound({role: 's1'}, func({target: s1}))
+        cb(s1, s2, s3)
+      })
     })
   })
 }
 
 
 
-init(function (s1, s2) {
+init(function (s1, s2, s3) {
   var consumer = require('./system/consumer/consumer')()
   consumer.mu.outbound({role: 's1'}, func({target: s1}))
   consumer.mu.outbound({role: 's2'}, func({target: s2}))
+  consumer.mu.outbound({role: 's3'}, func({target: s3}))
 
   consumer.consume(function () {
     console.log('done')
     consumer.mu.tearDown()
     s1.tearDown()
     s2.tearDown()
+    s3.tearDown()
   })
 })
 
