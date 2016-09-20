@@ -14,24 +14,10 @@
 
 'use strict'
 
+var tcp = require('mu/drivers/tcp')
 
-var mu = require('mu')()
-
-module.exports = function (cb) {
-
-  mu.define({role: 's1', cmd: 'one'}, function (args, cb) {
-    console.log('service 1 one')
-    cb(null, {data: 'from service1'})
-  })
-
-  mu.define({role: 's1', cmd: 'two'}, function (args, cb) {
-    console.log('service 1 two')
-    cb(null, {data: 'from service1 two'})
-  })
-
-  // simulate resource initialization
-  setTimeout(function () {
-    cb(mu)
-  }, 1000)
-}
+require('./service')(function (mu) {
+  mu.inbound('*', tcp.server({port: 3003, host: '127.0.0.1'}))
+  mu.outbound({role: 's1'}, tcp.client({port: 3001, host: '127.0.0.1'}))
+})
 
