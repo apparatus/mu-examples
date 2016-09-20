@@ -19,12 +19,13 @@
  * create a consumer instance of mu and consume the action handlers using a local function transport
  */
 
-
 var Mu = require('mu')
-var mu1 = Mu()
+var func = require('mu/drivers/func')
+
 
 
 // define service one
+var mu1 = Mu()
 
 mu1.define({role: 's1', cmd: 'one'}, function (args, cb) {
   console.log('in s1 one')
@@ -36,11 +37,11 @@ mu1.define({role: 's1', cmd: 'two'}, function (args, cb) {
   cb(null, {my: 'response'})
 })
 
-mu1.define('*', mu1.transports.func())
+mu1.inbound('*', func())
+
 
 
 // define service two
-
 var mu2 = Mu()
 
 mu2.define({role: 's2', cmd: 'one'}, function (args, cb) {
@@ -53,15 +54,15 @@ mu2.define({role: 's2', cmd: 'two'}, function (args, cb) {
   cb(null, {my: 'response'})
 })
 
-mu2.define('*', mu2.transports.func())
+mu2.inbound('*', func())
+
 
 
 // consume services
-
 var muc = Mu()
 
-muc.define({role: 's1'}, muc.transports.func({target: mu1}))
-muc.define({role: 's2'}, muc.transports.func({target: mu2}))
+muc.outbound({role: 's1'}, func({target: mu1}))
+muc.outbound({role: 's2'}, func({target: mu2}))
 
 muc.dispatch({role: 's1', cmd: 'one', fish: 'cheese'}, function (err, result) {
   console.log('in cb')

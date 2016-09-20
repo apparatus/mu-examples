@@ -22,7 +22,6 @@
 
 var Mu = require('mu')
 var tcp = require('mu/drivers/tcp')
-var balance = require('mu/adapters/balance')
 
 
 
@@ -30,8 +29,10 @@ var balance = require('mu/adapters/balance')
 var mu1 = Mu()
 
 mu1.define({role: 'test', cmd: 'one'}, function (args, cb) {
+
   console.log('in one')
   cb()
+
 })
 
 mu1.define({role: 'test', cmd: 'two'}, function (args, cb) {
@@ -42,29 +43,45 @@ mu1.define({role: 'test', cmd: 'two'}, function (args, cb) {
 mu1.inbound('*', tcp.server({port: 3001, host: '127.0.0.1'}))
 
 
+// custom adapter - console logs the packet and forwards
+var customAdapter = function (transports) {
+  var muid = 'bob-123'
 
-// service 2
-var mu2 = Mu()
+  function tf (message, cb) {
+    console.log('MESSAGE: ', message)
+    for (var index = 0; index < transports.length; ++index) {
+      transports[index].tf(message, cb)
+    }
+  }
 
-mu2.define({role: 'test', cmd: 'one'}, function (args, cb) {
-  console.log('in one')
-  cb()
-})
+  function setMu (muInstance) {
+    transports.forEach(function (transport) {
+      transport.setMu(muInstance)
+    })
+  }
 
-mu2.define({role: 'test', cmd: 'two'}, function (args, cb) {
-  console.log('SERVICE 2')
-  cb(null, {my: 'response'})
-})
+  function setId (id) {
+    transports.forEach(function (transport) {
+      transport.setId(muid)
+    })
+  }
 
-mu2.inbound('*', tcp.server({port: 3002, host: '127.0.0.1'}))
+
+  setId(muid)
+  return {
+    muid: muid,
+    tf: tf,
+    type: 'transport',
+    setId: setId,
+    setMu: setMu
+  }
+}
 
 
 
 // consumer
 var mu = Mu()
-
-mu.outbound({role: 'test'}, balance([tcp.client({port: 3001, host: '127.0.0.1'}),
-                                     tcp.client({port: 3002, host: '127.0.0.1'})]))
+mu.outbound({role: 'test'}, customAdapter([tcp.client({port: 3001, host: '127.0.0.1'})]))
 
 for (var idx = 0; idx < 10; idx++) {
   console.log('dispatching')

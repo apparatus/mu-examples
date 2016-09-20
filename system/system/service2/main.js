@@ -14,35 +14,9 @@
 
 'use strict'
 
-var func = require('mu/drivers/func')
+var tcp = require('mu/drivers/tcp')
 
-
-/*
- * spin up service and consume them in process using function transport
- */
-
-function init (cb) {
-  require('./system/service1/service')(function (s1) {
-    s1.inbound('*', func())
-    require('./system/service2/service')(function (s2) {
-      s2.inbound('*', func())
-      cb(s1, s2)
-    })
-  })
-}
-
-
-
-init(function (s1, s2) {
-  var consumer = require('./system/consumer/consumer')()
-  consumer.mu.outbound({role: 's1'}, func({target: s1}))
-  consumer.mu.outbound({role: 's2'}, func({target: s2}))
-
-  consumer.consume(function () {
-    console.log('done')
-    consumer.mu.tearDown()
-    s1.tearDown()
-    s2.tearDown()
-  })
+require('./service')(function (mu) {
+  mu.inbound('*', tcp.server({port: 3002, host: '127.0.0.1'}))
 })
 

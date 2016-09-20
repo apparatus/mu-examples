@@ -14,19 +14,9 @@
 
 'use strict'
 
+var tcp = require('mu/drivers/tcp')
 
-module.exports = function (mu) {
-
-  mu.define({role: 's1', cmd: 'one'}, function (args, cb) {
-    console.log('service 1 one')
-    cb()
-  })
-
-  mu.define({role: 's1', cmd: 'two'}, function (args, cb) {
-    console.log('service 1 two')
-    cb(null, {my: 'response'})
-  })
-
-  return mu
-}
+require('./service')(function (mu) {
+  mu.inbound('*', tcp.server({port: 3001, host: '127.0.0.1'}))
+})
 

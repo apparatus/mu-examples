@@ -14,24 +14,13 @@
 
 'use strict'
 
+var tcp = require('mu/drivers/tcp')
+var consumer = require('./consumer')()
+consumer.mu.outbound({role: 's1'}, tcp.client({port: 3001, host: '127.0.0.1'}))
+consumer.mu.outbound({role: 's2'}, tcp.client({port: 3002, host: '127.0.0.1'}))
 
-module.exports = function (mu) {
-
-  function consume (cb) {
-    mu.dispatch({role: 's2', cmd: 'one', fish: 'cheese'}, function (err, result) {
-      if (err) { console.log(err) }
-      console.log('in cb 1')
-      mu.dispatch({role: 's2', cmd: 'two', fish: 'cheese'}, function (err, result) {
-        if (err) { console.log(err) }
-        console.log('in cb 2')
-        cb()
-      })
-    })
-  }
-
-  return {
-    mu: mu,
-    consume: consume
-  }
-}
+consumer.consume(function () {
+  console.log('done')
+  consumer.mu.tearDown()
+})
 

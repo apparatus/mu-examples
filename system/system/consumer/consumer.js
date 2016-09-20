@@ -14,26 +14,26 @@
 
 'use strict'
 
-/*
- * spin up services and consume them in using tcp transport
- */
 
-var Mu = require('mu')
+var mu = require('mu')()
 
-var s1 = require('./system/service1')(Mu())
-s1.define('*', s1.transports.tcp({source: {port: 3001, host: '127.0.0.1'}}))
+module.exports = function () {
 
-var s2 = require('./system/service2')(Mu())
-s2.define('*', s2.transports.tcp({source: {port: 3002, host: '127.0.0.1'}}))
+  function consume (cb) {
+    mu.dispatch({role: 's2', cmd: 'one', fish: 'cheese'}, function (err, result) {
+      if (err) { console.log(err) }
+      console.log('in cb 1')
+      mu.dispatch({role: 's1', cmd: 'two', fish: 'cheese'}, function (err, result) {
+        if (err) { console.log(err) }
+        console.log('in cb 2')
+        cb()
+      })
+    })
+  }
 
-var consumer = require('./system/consumer')(Mu())
-consumer.mu.define({role: 's2'}, consumer.mu.transports.tcp({target: {port: 3002, host: '127.0.0.1'}}))
-consumer.mu.define({role: 's1'}, consumer.mu.transports.tcp({target: {port: 3001, host: '127.0.0.1'}}))
-
-consumer.consume(function () {
-  console.log('done')
-  consumer.mu.tearDown()
-  s1.tearDown()
-  s2.tearDown()
-})
+  return {
+    mu: mu,
+    consume: consume
+  }
+}
 
